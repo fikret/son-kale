@@ -703,19 +703,39 @@ const PAL = {
   archer: { body: '#37b96b', trim: '#c9f5d6', legs: '#27472f', helm: '#1f7a47' },
   enemy: { body: '#bf3a2b', trim: '#ff9a7a', legs: '#3a1d1d', helm: '#3a2626' },
   big: { body: '#7e2121', trim: '#ff5a3a', legs: '#2a1616', helm: '#2b1515' },
-  cmd: { body: '#f0c030', trim: '#fff1b0', legs: '#5a4620', helm: '#f6d54a' },
-  king: { body: '#c8102e', trim: '#ffd84a', legs: '#8a1020', helm: '#e8b930' }
+  cmd: { body: '#a8162c', trim: '#ffd84a', legs: '#3a2a6a', helm: '#f6d54a' },
+  king: { body: '#c8102e', trim: '#ffe27a', legs: '#5a1a7a', helm: '#e8b930' }
 };
+function crescent(x, y, r, col, hole) {
+  ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.28); ctx.fill();
+  ctx.fillStyle = hole; ctx.beginPath(); ctx.arc(x + r * 0.45, y, r * 0.82, 0, 6.28); ctx.fill();
+}
+function star(x, y, r, n, col) {
+  ctx.fillStyle = col; ctx.beginPath();
+  for (let i = 0; i < n * 2; i++) { const a = -1.5708 + i * Math.PI / n, d = i % 2 ? r * 0.45 : r; ctx.lineTo(x + Math.cos(a) * d, y + Math.sin(a) * d); }
+  ctx.closePath(); ctx.fill();
+}
 function drawUnit(u) {
   const P = u.fly ? PAL.king : PAL[u.kind], s = u.sc, f = u.face, x = u.x, y = u.y;
   const sw = u.moving ? Math.sin(u.anim * 13) : 0, bob = u.moving ? -Math.abs(Math.sin(u.anim * 13)) * 1.5 * s : 0;
   ctx.save();
   ctx.fillStyle = 'rgba(0,0,0,.42)'; ell(ctx, x, y + 2, 9 * s, 4 * s); ctx.fill();
-  if (u.fly) ctx.translate(0, -26 + Math.sin(G.anim * 3) * 3);
-  if (u.kind === 'cmd' && !u.fly) {
-    ctx.fillStyle = '#3a63e0'; ctx.beginPath();
-    ctx.moveTo(x - 5 * s, y - 17 * s + bob); ctx.lineTo(x + 5 * s, y - 17 * s + bob);
-    ctx.lineTo(x - f * 9 * s, y - 2 * s + sw * 2); ctx.lineTo(x - f * 3 * s, y - 2 * s); ctx.closePath(); ctx.fill();
+  if (u.fly) {
+    // yerde dönen sekiz köşeli yıldız (Selçuklu/Osmanlı motifi)
+    ctx.save(); ctx.translate(x, y + 2); ctx.scale(1, 0.42); ctx.rotate(G.anim * 0.6);
+    ctx.fillStyle = 'rgba(255,200,60,.16)'; ctx.strokeStyle = 'rgba(255,215,90,.9)'; ctx.lineWidth = 2.2;
+    ctx.beginPath(); ctx.arc(0, 0, 22, 0, 6.28); ctx.fill(); ctx.stroke();
+    ctx.strokeRect(-15, -15, 30, 30); ctx.rotate(Math.PI / 4); ctx.strokeRect(-15, -15, 30, 30);
+    ctx.restore();
+    ctx.translate(0, -26 + Math.sin(G.anim * 3) * 3);
+  }
+  if (u.kind === 'cmd') {
+    // kızıl kaftan pelerini, altın kenarlı
+    const w = u.fly ? 1.5 : 1, fw = u.fly ? Math.sin(G.anim * 6) * 2 * s : sw * 2;
+    ctx.fillStyle = '#a3142a'; ctx.strokeStyle = '#ffd84a'; ctx.lineWidth = 1.4; ctx.beginPath();
+    ctx.moveTo(x - 5 * s, y - 18 * s + bob); ctx.lineTo(x + 5 * s, y - 18 * s + bob);
+    ctx.lineTo(x - f * 11 * w * s, y - 1 * s + fw); ctx.lineTo(x - f * 2 * s, y - 1 * s); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#ffd84a'; star(x - f * 6 * w * s, y - 8 * s + bob, 2 * s, 5, '#ffd84a');
   }
   ctx.fillStyle = P.legs;
   ctx.fillRect(x - 4 * s + sw * 2 * s, y - 7 * s, 3 * s, 8 * s); ctx.fillRect(x + 1 * s - sw * 2 * s, y - 7 * s, 3 * s, 8 * s);
@@ -727,6 +747,11 @@ function drawUnit(u) {
   }
   ctx.fillStyle = P.body; rr(ctx, x - 6 * s, y - 18 * s + bob, 12 * s, 13 * s, 3 * s); ctx.fill();
   ctx.fillStyle = P.trim; ctx.fillRect(x - 6 * s, y - 11 * s + bob, 12 * s, 2 * s);
+  if (u.kind === 'cmd') {
+    ctx.fillStyle = '#ffd84a'; ctx.fillRect(x - 0.8 * s, y - 18 * s + bob, 1.6 * s, 7 * s);
+    for (const sx of [-6, 6]) { ctx.beginPath(); ctx.arc(x + sx * s, y - 17.5 * s + bob, 2.6 * s, 0, 6.28); ctx.fill(); }
+    ctx.fillStyle = '#ffffff'; for (let i = 0; i < 3; i++) ctx.fillRect(x - 0.4 * s, y - 17 * s + bob + i * 2.2 * s, 0.8 * s, 0.8 * s);
+  }
   ctx.fillStyle = '#ebc7a0'; ctx.beginPath(); ctx.arc(x, y - 22 * s + bob, 4.6 * s, 0, 6.28); ctx.fill();
   ctx.fillStyle = P.helm; ctx.beginPath(); ctx.arc(x, y - 23 * s + bob, 4.9 * s, 3.14, 6.28); ctx.fill();
   ctx.fillRect(x - 4.9 * s, y - 23 * s + bob, 9.8 * s, 1.6 * s);
@@ -736,11 +761,18 @@ function drawUnit(u) {
     const fl = 1 + 0.35 * Math.sin(G.anim * 30);
     ctx.fillStyle = '#7ff';
     for (const lx of [-4.2, 2.6]) { ctx.beginPath(); ctx.moveTo(x + lx * s, y + 1 * s); ctx.lineTo(x + (lx + 2.2) * s, y + 1 * s); ctx.lineTo(x + (lx + 1.1) * s, y + (9 + 5 * fl) * s); ctx.fill(); }
-    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x, y - 13 * s + bob, 2.6 * s, 0, 6.28); ctx.fill();
-    ctx.fillStyle = 'rgba(120,255,255,.35)'; ctx.beginPath(); ctx.arc(x, y - 13 * s + bob, 5 * s, 0, 6.28); ctx.fill();
+    ctx.fillStyle = 'rgba(255,220,100,.45)'; ctx.beginPath(); ctx.arc(x, y - 13 * s + bob, 5.5 * s, 0, 6.28); ctx.fill();
+    crescent(x - 0.6 * s, y - 13 * s + bob, 3.4 * s, '#ffd84a', '#c8102e'); star(x + 1.4 * s, y - 13 * s + bob, 1.7 * s, 5, '#ffffff');
     ctx.fillStyle = u.atk > 0 ? '#fff' : '#7ff'; ctx.beginPath(); ctx.arc(hx + f * 2 * s, hy, (u.atk > 0 ? 5 : 3.2) * s, 0, 6.28); ctx.fill();
-    ctx.fillStyle = '#ffe9a0'; ctx.fillRect(x - 3.5 * s, y - 23.4 * s + bob, 7 * s, 1.4 * s);
-  } else if (u.kind === 'sword' || u.kind === 'cmd') {
+  } else if (u.kind === 'cmd') {
+    // yatağan: kavisli, altın kabzalı kılıç
+    const a = -1.05 + swing, L = 17 * s, dx = f * Math.cos(a) * L, dy = Math.sin(a) * L;
+    const cx2 = hx + dx * 0.5 - dy * 0.14 * f, cy2 = hy + dy * 0.5 + dx * 0.14 * f;
+    ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(hx, hy); ctx.quadraticCurveTo(cx2, cy2, hx + dx, hy + dy);
+    ctx.strokeStyle = '#fff1a8'; ctx.lineWidth = 3.4; ctx.stroke(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.2; ctx.stroke();
+    ctx.strokeStyle = '#ffd84a'; ctx.lineWidth = 2.6;
+    ctx.beginPath(); ctx.moveTo(hx - f * Math.cos(a + 1.57) * 3.2, hy - Math.sin(a + 1.57) * 3.2); ctx.lineTo(hx + f * Math.cos(a + 1.57) * 3.2, hy + Math.sin(a + 1.57) * 3.2); ctx.stroke();
+  } else if (u.kind === 'sword') {
     const a = -1.05 + swing, L = (u.kind === 'cmd' ? 17 : 14) * s;
     ctx.strokeStyle = u.kind === 'cmd' ? '#fff3b0' : '#eef3f8'; ctx.lineWidth = 2.6; ctx.lineCap = 'round';
     ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(hx + f * Math.cos(a) * L, hy + Math.sin(a) * L); ctx.stroke();
@@ -766,11 +798,31 @@ function drawUnit(u) {
     ctx.fillStyle = '#ff2a1a'; ctx.fillRect(x + f * 1.2 * s - 1, y - 22.5 * s + bob, 2.2, 1.8);
     ctx.fillRect(x + f * 3.4 * s - 1, y - 22.5 * s + bob, 2.2, 1.8);
   }
-  if (u.kind === 'cmd' && !u.fly) {
-    ctx.fillStyle = '#ffd84a'; ctx.beginPath();
-    const cy0 = y - 27 * s + bob;
-    ctx.moveTo(x - 4.5 * s, cy0 + 3 * s); ctx.lineTo(x - 4.5 * s, cy0 - 2 * s); ctx.lineTo(x - 2.2 * s, cy0 + 0.5 * s); ctx.lineTo(x, cy0 - 3 * s);
-    ctx.lineTo(x + 2.2 * s, cy0 + 0.5 * s); ctx.lineTo(x + 4.5 * s, cy0 - 2 * s); ctx.lineTo(x + 4.5 * s, cy0 + 3 * s); ctx.closePath(); ctx.fill();
+  if (u.kind === 'cmd') {
+    // sarık, hilalli broş ve sorguç (tüy)
+    const ty = y - 26.5 * s + bob, wc = u.fly ? '#fff4c8' : '#f6f0e0';
+    ctx.fillStyle = wc; ell(ctx, x, ty, 6.8 * s, 4.8 * s); ctx.fill();
+    ctx.strokeStyle = 'rgba(150,110,40,.65)'; ctx.lineWidth = 0.9;
+    for (let i = -1; i <= 1; i++) { ctx.beginPath(); ctx.arc(x, ty + i * 1.2 * s, 5.2 * s, 3.5, 5.9); ctx.stroke(); }
+    ctx.fillStyle = '#c8102e'; ctx.fillRect(x - 6.5 * s, ty + 1.2 * s, 13 * s, 1.9 * s);
+    ctx.fillStyle = '#ffd84a'; ctx.fillRect(x - 6.5 * s, ty + 3.1 * s, 13 * s, 0.9 * s);
+    for (let i = -2; i <= 2; i++) {
+      const tx = x + i * 2.1 * s + f * 1.5 * s, tyy = ty - 10.5 * s - (2 - Math.abs(i)) * 1.6 * s + Math.sin(G.anim * 4 + i) * 0.5;
+      ctx.strokeStyle = i % 2 ? '#fff6c8' : '#ffd84a'; ctx.lineWidth = 1.6; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(x + f * 0.8 * s, ty - 2.5 * s); ctx.quadraticCurveTo(x + i * 0.8 * s + f * 1.5 * s, ty - 7 * s, tx, tyy); ctx.stroke();
+    }
+    crescent(x + f * 0.6 * s, ty - 0.2 * s, 2.5 * s, '#ffd84a', wc);
+    ctx.fillStyle = '#ff2a4a'; ctx.beginPath(); ctx.arc(x + f * 0.9 * s, ty - 0.2 * s, 0.9 * s, 0, 6.28); ctx.fill();
+    // parıltı
+    ctx.globalCompositeOperation = 'lighter';
+    const gr = u.fly ? 36 : 22, gg = ctx.createRadialGradient(x, y - 14 * s + bob, 0, x, y - 14 * s + bob, gr * s);
+    gg.addColorStop(0, u.fly ? 'rgba(255,215,90,.4)' : 'rgba(255,215,90,.17)'); gg.addColorStop(1, 'rgba(255,170,40,0)');
+    ctx.fillStyle = gg; ctx.fillRect(x - gr * s, y - 14 * s + bob - gr * s, gr * 2 * s, gr * 2 * s);
+    ctx.globalCompositeOperation = 'source-over';
+    if (u.fly) for (let i = 0; i < 6; i++) {
+      const a = G.anim * 1.4 + i * 1.05, tw = 0.6 + 0.4 * Math.sin(G.anim * 8 + i * 2);
+      star(x + Math.cos(a) * (15 + 4 * Math.sin(G.anim * 3 + i)) * s, y - 14 * s + bob + Math.sin(a * 1.3) * 20 * s, 2.6 * tw, 4, '#fff6c8');
+    }
   }
   if (u.hit > 0) { ctx.fillStyle = 'rgba(255,255,255,.55)'; rr(ctx, x - 6 * s, y - 18 * s + bob, 12 * s, 13 * s, 3 * s); ctx.fill(); }
   ctx.restore();
